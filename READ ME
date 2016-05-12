@@ -1,0 +1,25 @@
+READ ME
+
+Background:
+The National Level Data Mining Case Competition is hosted by Rang Technologies and KVRA using retail data.
+The competition is open for registration until May 15th, with submissions open through June 1st, then final submissions will be selected from June 1st through June 5th and awards and certificates will be given to top participants.
+
+Data description and problem statement:
+The data set consists of a binary target and several features. Your goal is to get best possible classification accuracy. Classification accuracy definition: Correct classification of true positive and false negatives in confusion matrix
+This data is coming from retail industry. The target variable is 'Active_Customer', 1 means customer is loyal, 0 means customer is not loyal. The features are anonymized, however all are behavioral variables (purchase behavior), there are no demographic variables in the data
+
+Working Path:
+Using R for the competition in order to try several new packages not used before. 
+Data cleaning:
+Using package ‘VIM’ to check missing value and their distribution to see how to handle those missing data. 
+The missing data turns out to be several ‘inefficient’ customers with many missing columns. Then delete those customers as they are just a small proportion.
+
+Feature engineering:
+Using the BORUTA to select the feature. Then using different model to fit the data and optimizing parameters while further trim the feature based on some parameters.
+
+
+特征工程：
+BORUTAX重选，回归剔除，相关性剔除，相应合并
+http://www.datasciencecentral.com/profiles/blogs/feature-engineering-tips-for-data-scientists
+http://stats.stackexchange.com/questions/70249/feature-selection-model-with-glmnet-on-methylation-data-pn
+http://stats.stackexchange.com/questions/99362/predict-coefficients-with-glmnet
