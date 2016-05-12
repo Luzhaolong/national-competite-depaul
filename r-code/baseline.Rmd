@@ -1,0 +1,75 @@
+---
+title: "DePaulCompetit"
+author: "Luke"
+date: "April 29, 2016"
+output: html_document
+---
+
+```{r}
+install.packages('randomForest')
+install.packages('dummies')
+install.packages('Boruta')
+library(Boruta)
+library(rpart)
+library(caret)
+library(e1071)
+library(corrplot)
+library(dummies)
+library(nnet)
+library(randomForest)
+library(dplyr)
+#This file is data directly delete the NA values
+path <- '~/Desktop/DePaul Compitit'
+setwd(path)
+traindata <- na.omit(read.csv('Train.csv',sep=',',header=TRUE,row.names = NULL))[,-1]
+#Convert factor into numeric
+str(traindata)
+
+traindata$Cust_status<- as.numeric(traindata$Cust_status)
+traindata$Trans24<- as.numeric(traindata$Trans24)
+traindata$Trans25<- as.numeric(traindata$Trans25)
+traindata$Trans26<- as.numeric(traindata$Trans26)
+traindata$Trans27<- as.numeric(traindata$Trans27)
+
+#Train-Test split
+smp_size <- floor(0.7 *nrow(traindata))
+set.seed(123)
+train_idx <- sample(seq_len(nrow(traindata)),size = smp_size)
+train <- traindata[train_idx,]
+test <- traindata[-train_idx,]
+
+
+#########TREE BASED FOR FEATURES#############
+###BORUTA#####
+Bor.DePaulCom <- Boruta(Active_Customer~.,data = train,doTrace = 2,pValue=0.1)
+Bor.DePaulCom_TenFixed <- TentativeRoughFix(Bor.DePaulCom)
+attStats(Bor.DePaulCom)
+plotZHistory(Bor.DePaulCom)
+##########TREE BASED MODEL USING BORUTA FEATURES FOR BENCHMARK#############
+#FIXED Y
+trainrf <- train
+trainrf$Active_Customer <- as.factor(trainrf$Active_Customer)
+#Boruta trees
+rf_allpassfeatures <-randomForest(trainrf[,getSelectedAttributes(Bor.DePaulCom)],trainrf$Active_Customer,ntree=100,importance=TRUE, proximity=TRUE)
+rf_allimportantfeatures <-randomForest(trainrf[,getSelectedAttributes(Bor.DePaulCom_TenFixed)],trainrf$Active_Customer,ntree=100,importance=TRUE, proximity=TRUE)
+rf_fullfeatures <- randomForest(Active_Customer~.,trainrf,ntree=100,importance=TRUE, proximity=TRUE)
+rf_allpassfeatures
+rf_allimportantfeatures
+rf_fullfeatures
+#Features
+getSelectedAttributes(Bor.DePaulCom)
+getSelectedAttributes(Bor.DePaulCom_TenFixed)
+
+#After we know what are those 'features', we can try different model instead only tree based#
+#############Data Trimming##############
+trainlrg1 <- trainrf[,names(trainrf)%in%getSelectedAttributes(Bor.DePaulCom)]
+trainlrg1$Active_Customer <- trainrf$Active_Customer
+trainlrg2 <- trainrf[,names(trainrf)%in%getSelectedAttributes(Bor.DePaulCom_TenFixed)]
+trainlrg2$Active_Customer <- trainrf$Active_Customer
+#############LINEAR BASED#########
+#Bench Mark for LG
+logrg <- glm(Active_Customer~.,family=binomial(link='logit'),data=trainlrg1)
+summary(logrg)
+backwards = step(logrg)
+
+```
