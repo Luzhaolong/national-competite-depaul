@@ -46,7 +46,7 @@ validation <- traindata[-train_idx,]
 ################################################
 ################  BORUTA  ######################
 ################################################
-Bor.DePaulCom <- Boruta(Active_Customer~.,data = train,doTrace = 2,pValue=0.05,maxRuns=150)
+Bor.DePaulCom <- Boruta(Active_Customer~.,data = train,doTrace = 2,pValue=0.2)
 Bor.DePaulCom_TenFixed <- TentativeRoughFix(Bor.DePaulCom)
 attStats(Bor.DePaulCom)
 plotZHistory(Bor.DePaulCom)
@@ -74,64 +74,37 @@ write.csv(validation_fselectall,file = 'validation_Borutaall.csv')
 
 
 
-###############################################################################################################
-################################  MODELING  USING ALL GOOD BORUTA FEATURES#####################################
-###############################################################################################################
-traindata <- read.csv('train_Boruta.csv',sep=',',header=TRUE,row.names = NULL)[,-1]
-View(traindata)
+#################################################################################
+################################  MODELING  #####################################
+#################################################################################
+traindata <- read.csv('train_Boruta.csv',sep=',',header=TRUE,row.names = NULL)[-1]
+#View(traindata)
 validata <- read.csv('validation_Boruta.csv',sep=',',header=TRUE,row.names = NULL)[,-1]
-View(validata)
-traindatafull <- read.csv('train_Borutaall.csv',sep=',',header=TRUE)[,-1]
-validata <- read.csv('validation_Borutaall.csv',sep=',',header=TRUE)[,-1]
-
+#View(validata)
+#################################################################
+################  BENCHEN MRK RANDOMFOREST  #####################
+#################################################################
 #FIXED Y
 traindata$Active_Customer <- as.factor(traindata$Active_Customer)
 validata$Active_Customer <- as.factor(validata$Active_Customer)
 
-#################################################################
-################  BENCHEN MRK RANDOMFOREST  #####################
-#################################################################
-
-#RandomForest trees
+#Boruta trees
 RFfit <-randomForest(Active_Customer~.,data = traindata,ntree=100,importance=TRUE, proximity=TRUE)
 RFpred <- predict(RFfit,validata)
 resRF <- table(observed = validata$Active_Customer,predicted=RFpred)
-confusionMatrix(resRF)
-#Accuracy:0.6681  Sensitivity:0.6433  Specificity 0.6994
+confusionMatrix(res)
 
 #################################################################
 ###################  LOGISTIC REGRESSION ########################
 #################################################################
-#LG to see the features p-value
+#Bench Mark for LG
 logrgfit <- glm(Active_Customer~.,family=binomial(link='logit'),data=traindata)
-logpred <- predict(logrgfit,validata,type='response')
-logpredreslt <- ifelse(logpred >0.5,1,0)
-micClassificationerror <- mean(logpredreslt != validata$Active_Customer)
-print(paste('Accuracy',1-micClassificationerror))
 summary(logrgfit)
-
 #Using Lasso to regularization the regression and finding the gradient descent parameter
-X_penlregre = as.matrix(traindata[,1:83])
-Y_penlregre = traindata$Active_Customer
-X_penlregre_validata = as.matrix(validata[,1:83])
-Y_penlregre_validata = validata$Active_Customer
 
-lasso_logrgfit <- glmnet(X_penlregre,Y_penlregre,family='binomial',alpha=1)
-summary(lasso_logrgfit)
-lasso_log <- predict(lasso_logrgfit,X_penlregre_validata,type='response')
-lasso_logpredreslt <- ifelse(lasso_log >0.5,1,0)
-micClassificationerror_lasso <- mean(lasso_logpredreslt != validata$Active_Customer)
-print(paste('Accuracy',1-micClassificationerror_lasso))
-summary(lasso_logrgfit)
-plot.glmnet(lasso_logrgfit)
+#lasso_logrgfit <- glmnet(Active_Customer ~.,family=binomial(link='logit'),traindata,alpha=1)
+#summary(lasso_logrgfit)
 
-ridge_logrgfit <- glmnet(X_penlregre,Y_penlregre,family='binomial',alpha=0)
-ridge_log <- predict(ridge_logrgfit,X_penlregre_validata,type='response')
-ridge_logpredreslt <- ifelse(ridge_log >0.5,1,0)
-micClassificationerror_ridge <- mean(ridge_logpredreslt != validata$Active_Customer)
-print(paste('Accuracy',1-micClassificationerror_ridge))
-summary(lasso_logrgfit)
-plot.glmnet(ridge_logrgfit)
 #The following function may have teh problem of multicolinearity
 #logitpred <- predict(logrgfit,validata)
 
