@@ -101,3 +101,12 @@ RFfitbackward <-randomForest(formula(backwards),data = traindata,ntree=100,impor
 RFpredbackward <- predict(RFfitbackward,validata)
 resRFbackward <- table(observed = validata$Active_Customer,predicted=RFpredbackward)
 confusionMatrix(resRFbackward)
+
+#################################################################
+###################  XGBoosting Method ##########################
+#################################################################
+
+
+
+
+
