@@ -28,21 +28,15 @@ setwd(path)
 ###############################################################################################################
 ################################  MODELING  USING ALL GOOD BORUTA FEATURES#####################################
 ###############################################################################################################
+################################                001150                    #####################################
+###############################################################################################################
+
 traindata <- read.csv('train_Boruta001150.csv',sep=',',header=TRUE,row.names = NULL)[,-1]
 #View(traindata)
 validata <- read.csv('validation_Boruta001150.csv',sep=',',header=TRUE,row.names = NULL)[,-1]
 #View(validata)
 traindatafull <- read.csv('train_Borutaall001150.csv',sep=',',header=TRUE)[,-1]
 validatafull <- read.csv('validation_Borutaall001150.csv',sep=',',header=TRUE)[,-1]
-
-traindata1<- read.csv('train_Boruta005120.csv',sep=',',header=TRUE,row.names = NULL)[,-1]
-#View(traindata)
-validata1 <- read.csv('validation_Boruta005120.csv',sep=',',header=TRUE,row.names = NULL)[,-1]
-#View(validata)
-traindatafull1 <- read.csv('train_Borutaall005120.csv',sep=',',header=TRUE)[,-1]
-validatafull1 <- read.csv('validation_Borutaall005120.csv',sep=',',header=TRUE)[,-1]
-
-
 #FIXED Y
 traindata$Active_Customer <- as.factor(traindata$Active_Customer)
 validata$Active_Customer <- as.factor(validata$Active_Customer)
@@ -54,25 +48,73 @@ validatafull$Active_Customer <- as.factor(validatafull$Active_Customer)
 #################################################################
 
 #RandomForest trees
-#With ntree = 100 we have Accuracy of 0.6669 with 95%CI[0.6558,0.6779]
-#Accuracy:0.6681  Sensitivity:0.6433  Specificity 0.6994
-#With ntree = 200 we have Accuracy of 0.6703 with 95%CI[0.6592,0.6813]
-#Accuracy:0.6703  Sensitivity:0.6438  Specificity 0.7047
-#With ntree = 400 we have Accuracy of 0.6701 with 95%CI[0.659,0.681]
-#Accuracy:0.6701  Sensitivity: 0.6438 Specificity:0.7038
-RFfit <-randomForest(Active_Customer~.,data = traindata,ntree=400,importance=TRUE, proximity=TRUE)
+# With ntree = 100 we have Accuracy of 0.6669 with 95%CI[0.6558,0.6779]
+# Accuracy:0.6681  Sensitivity:0.6433  Specificity 0.6994
+# With ntree = 200 we have Accuracy of 0.6703 with 95%CI[0.6592,0.6813]
+# Accuracy:0.6703  Sensitivity:0.6438  Specificity 0.7047
+# With ntree = 400 we have Accuracy of 0.6701 with 95%CI[0.659,0.681]
+# Accuracy:0.6701  Sensitivity: 0.6438 Specificity:0.7038
+# With ntree = 800 we have Accuracy of 0.6719 with 95%CI[0.6608,0.6829]
+# Accuracy:0.6719  Sensitivity: 0.6457 Specificity:0.7056
+RFfit <-randomForest(Active_Customer~.,data = traindata,ntree=800,importance=TRUE, proximity=TRUE)
 RFpred <- predict(RFfit,validata)
 resRF <- table(observed = validata$Active_Customer,predicted=RFpred)
 confusionMatrix(resRF)
 
 #RandomForest trees all
 #With ntree = 400 we have Accuracy of 0.6686 with 95%CI[0.6575,0.6796]
-RFfit_all <-randomForest(Active_Customer~.,data = traindatafull,ntree=400,importance=TRUE, proximity=TRUE)
+#With ntree = 800 we have Accuracy of 0.6723 with 95%CI[0.6612,0.6796]
+RFfit_all <-randomForest(Active_Customer~.,data = traindatafull,ntree=800,importance=TRUE, proximity=TRUE)
 RFpred_all <- predict(RFfit_all,validatafull)
 resRF_all <- table(observed = validatafull$Active_Customer,predicted=RFpred_all)
 confusionMatrix(resRF_all)
 
 #################Conclusion: Not using all features############################
+###############################################################################################################
+################################                001150                    #####################################
+###############################################################################################################
+
+###############################################################################################################
+################################                005120                    #####################################
+###############################################################################################################
+traindata1<- read.csv('train_Boruta.csv',sep=',',header=TRUE,row.names = NULL)[,-1]
+#View(traindata)
+validata1 <- read.csv('validation_Boruta.csv',sep=',',header=TRUE,row.names = NULL)[,-1]
+#View(validata)
+traindatafull1 <- read.csv('train_Borutaall.csv',sep=',',header=TRUE)[,-1]
+validatafull1 <- read.csv('validation_Borutaall.csv',sep=',',header=TRUE)[,-1]
+#FIXED Y
+traindata1$Active_Customer <- as.factor(traindata1$Active_Customer)
+validata1$Active_Customer <- as.factor(validata1$Active_Customer)
+traindatafull1$Active_Customer <- as.factor(traindatafull1$Active_Customer)
+validatafull1$Active_Customer <- as.factor(validatafull1$Active_Customer)
+
+#RF 005120
+# With ntree = 400 we have Accuracy of 0.673 with 95%CI[0.662,0.684]
+# Accuracy:0.673  Sensitivity: 0.6454 Specificity:0.7092
+# With ntree = 600 we have Accuracy of 0.6706 with 95%CI[0.6595,0.6816]
+# Accuracy:0.6706  Sensitivity: 0.6433 Specificity:0.7065
+# With ntree = 500 we have Accuracy of 0.6711 with 95%CI[0.66,0.682]
+# Accuracy:0.6711  Sensitivity: 0.6441 Specificity:0.7061
+RFfit <-randomForest(Active_Customer~.,data = traindata1,ntree=500,importance=TRUE, proximity=TRUE)
+RFpred <- predict(RFfit,validata1)
+resRF <- table(observed = validata$Active_Customer,predicted=RFpred)
+confusionMatrix(resRF)
+
+
+
+#RandomForest trees all
+#With ntree = 400 we have Accuracy of 0.6716 with 95%CI[0.6605,0.6826]
+#With ntree = 600 we have Accuracy of 0.6725 with 95%CI[0.6614,0.6834]
+RFfit_all <-randomForest(Active_Customer~.,data = traindatafull1,ntree=600,importance=TRUE, proximity=TRUE)
+RFpred_all <- predict(RFfit_all,validatafull1)
+resRF_all <- table(observed = validatafull$Active_Customer,predicted=RFpred_all)
+confusionMatrix(resRF_all)
+###############################################################################################################
+################################                005120                    #####################################
+###############################################################################################################
+
+
 
 #################################################################
 ###################  LOGISTIC REGRESSION ########################
@@ -146,3 +188,6 @@ Y_xgb_pred_backward <- ifelse(Y_xgb_pred_backward >0.5,1,0)
 xgb_backward_table <- table(observed = Y_xgb_validata,predicted=Y_xgb_pred_backward)
 confusionMatrix(xgb_backward_table)
 
+###############################################################################################################
+# Random Forest performs better. Feature would be further filtered. #
+###############################################################################################################
