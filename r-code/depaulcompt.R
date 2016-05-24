@@ -7,6 +7,7 @@ install.packages('caret')
 install.packages('e1071')
 install.packages('corrplot')
 install.packages('dplyr')
+install.packages('xgboost')
 
 library(caret)
 library(Boruta)
@@ -20,8 +21,10 @@ library(randomForest)
 library(dplyr)
 library(ROCR)
 library(glmnet)
+library(xgboost)
 
-
+path <- '~/Desktop/DePaul Compitit/NationalCompetite/data/features'
+setwd(path)
 ###############################################################################################################
 ################################  MODELING  USING ALL GOOD BORUTA FEATURES#####################################
 ###############################################################################################################
@@ -43,6 +46,8 @@ validatafull1 <- read.csv('validation_Borutaall005120.csv',sep=',',header=TRUE)[
 #FIXED Y
 traindata$Active_Customer <- as.factor(traindata$Active_Customer)
 validata$Active_Customer <- as.factor(validata$Active_Customer)
+traindatafull$Active_Customer <- as.factor(traindatafull$Active_Customer)
+validatafull$Active_Customer <- as.factor(validatafull$Active_Customer)
 
 #################################################################
 ################  BENCHEN MRK RANDOMFOREST  #####################
@@ -50,11 +55,24 @@ validata$Active_Customer <- as.factor(validata$Active_Customer)
 
 #RandomForest trees
 #With ntree = 100 we have Accuracy of 0.6669 with 95%CI[0.6558,0.6779]
-RFfit <-randomForest(Active_Customer~.,data = traindata,ntree=100,importance=TRUE, proximity=TRUE)
+#Accuracy:0.6681  Sensitivity:0.6433  Specificity 0.6994
+#With ntree = 200 we have Accuracy of 0.6703 with 95%CI[0.6592,0.6813]
+#Accuracy:0.6703  Sensitivity:0.6438  Specificity 0.7047
+#With ntree = 400 we have Accuracy of 0.6701 with 95%CI[0.659,0.681]
+#Accuracy:0.6701  Sensitivity: 0.6438 Specificity:0.7038
+RFfit <-randomForest(Active_Customer~.,data = traindata,ntree=400,importance=TRUE, proximity=TRUE)
 RFpred <- predict(RFfit,validata)
 resRF <- table(observed = validata$Active_Customer,predicted=RFpred)
 confusionMatrix(resRF)
-#Accuracy:0.6681  Sensitivity:0.6433  Specificity 0.6994
+
+#RandomForest trees all
+#With ntree = 400 we have Accuracy of 0.6686 with 95%CI[0.6575,0.6796]
+RFfit_all <-randomForest(Active_Customer~.,data = traindatafull,ntree=400,importance=TRUE, proximity=TRUE)
+RFpred_all <- predict(RFfit_all,validatafull)
+resRF_all <- table(observed = validatafull$Active_Customer,predicted=RFpred_all)
+confusionMatrix(resRF_all)
+
+#################Conclusion: Not using all features############################
 
 #################################################################
 ###################  LOGISTIC REGRESSION ########################
@@ -69,9 +87,9 @@ summary(logrgfit)
 #Accuracy:0.6658
 
 #Using Lasso to regularization the regression and finding the gradient descent parameter
-X_penlregre = as.matrix(traindata[,1:83])
+X_penlregre = as.matrix(traindata[,1:84])
 Y_penlregre = traindata$Active_Customer
-X_penlregre_validata = as.matrix(validata[,1:83])
+X_penlregre_validata = as.matrix(validata[,1:84])
 Y_penlregre_validata = validata$Active_Customer
 
 lasso_logrgfit <- glmnet(X_penlregre,Y_penlregre,family='binomial',alpha=1)
@@ -93,20 +111,38 @@ summary(lasso_logrgfit)
 plot.glmnet(ridge_logrgfit)
 #Accuracy:0.6301
 
-
 backwards <- step(logrgfit)
 summary(backwards)
 backwards$anova
-RFfitbackward <-randomForest(formula(backwards),data = traindata,ntree=100,importance=TRUE, proximity=TRUE)
+
+#Using logit regression step back features to build RF
+#Accuracy:0.673 95%CI[0.662,0.684]
+RFfitbackward <-randomForest(formula(backwards),data = traindata,ntree=400,importance=TRUE, proximity=TRUE)
 RFpredbackward <- predict(RFfitbackward,validata)
 resRFbackward <- table(observed = validata$Active_Customer,predicted=RFpredbackward)
 confusionMatrix(resRFbackward)
 
+
 #################################################################
 ###################  XGBoosting Method ##########################
 #################################################################
+#####Original Features#######
+X_xgb = as.matrix(traindata[,1:84])
+Y_xgb = traindata$Active_Customer
+X_xgb_validata = as.matrix(validata[,1:84])
+Y_xgb_validata = validata$Active_Customer
+xgbst_fit_originalfeature <- xgboost(data = X_xgb,label = Y_xgb,nrounds=30,max_depth=15,objective = 'binary:logistic')
+Y_xgb_pred <- predict(xgbst_fit_originalfeature,X_xgb_validata)
+Y_xgb_pred <- ifelse(Y_xgb_pred >0.5,1,0)
+xgb_table <- table(observed =Y_xgb_validata,predicted=Y_xgb_pred)
+confusionMatrix(xgb_table)
 
-
-
-
+######Filtered Feature#####
+train_backwardsdata <- as.matrix(traindata[,c(3,5,6,7,8,9,10,12,14,17,18,20,21,24,28,30,34,36,38,40,41,47,48,49,55,62,72,74,76,80,82)])
+valid_backwardsdata <- as.matrix(validata[,c(3,5,6,7,8,9,10,12,14,17,18,20,21,24,28,30,34,36,38,40,41,47,48,49,55,62,72,74,76,80,82)])
+xgb_backward <-xgboost(data = train_backwardsdata,label = Y_xgb,nrounds=30,max_depth=15,objective = 'binary:logistic')
+Y_xgb_pred_backward <- predict(xgb_backward,valid_backwardsdata)
+Y_xgb_pred_backward <- ifelse(Y_xgb_pred_backward >0.5,1,0)
+xgb_backward_table <- table(observed = Y_xgb_validata,predicted=Y_xgb_pred_backward)
+confusionMatrix(xgb_backward_table)
 
